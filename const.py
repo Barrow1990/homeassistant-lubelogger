@@ -1,0 +1,2 @@
+DOMAIN = "lubelogger"
+PLATFORMS = ["sensor"]

@@ -1,0 +1,10 @@
+{
+  "domain": "lubelogger",
+  "name": "LubeLogger",
+  "version": "0.0.1",
+  "documentation": "https://docs.lubelogger.com/",
+  "requirements": [],
+  "codeowners": ["@Barrow1990"],
+  "iot_class": "cloud_polling",
+  "config_flow": true
+}
