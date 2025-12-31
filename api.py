@@ -27,3 +27,16 @@ class LubeLoggerAPI:
 
     async def close(self):
         await self._session.close()
+
+    async def get_odometer_records(self, vehicle_id: int):
+        path = f"/api/vehicle/odometerrecords?vehicleId={vehicle_id}"
+        return await self._get(path)
+
+    async def get_latest_odometer(self, vehicle_id: int):
+        records = await self.get_odometer_records(vehicle_id)
+        if not records:
+            return None
+
+        # Convert odometer strings to integers and pick the max
+        latest = max(records, key=lambda r: int(r["odometer"]))
+        return int(latest["odometer"])
