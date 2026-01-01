@@ -79,7 +79,6 @@ class LubeLoggerVehicleStatusSensor(SensorEntity):
 class LubeLoggerOdometerSensor(SensorEntity):
     """Odometer sensor for a LubeLogger vehicle."""
 
-    _attr_native_unit_of_measurement = "km"
     should_poll = True
 
     def __init__(self, entry: ConfigEntry, vehicle: dict[str, Any]):
@@ -92,6 +91,10 @@ class LubeLoggerOdometerSensor(SensorEntity):
         self._attr_unique_id = f"{entry.entry_id}_vehicle_{vehicle_id}_odometer"
         self._attr_name = f"{name} Odometer"
 
+        # Unit is whatever LubeLogger uses (km or mi)
+        self._unit = entry.data.get("odometer_unit", "km")
+        self._attr_native_unit_of_measurement = self._unit
+
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, f"vehicle_{vehicle_id}")},
             name=name,
@@ -101,15 +104,11 @@ class LubeLoggerOdometerSensor(SensorEntity):
 
         self._attr_native_value = None
 
-    @property
-    def available(self):
-        return True
-
-
     async def async_update(self):
-        """Fetch latest odometer value."""
+        """Fetch latest odometer value (raw km or miles from LubeLogger)."""
         api = self.hass.data[DOMAIN][self._entry.entry_id]
         latest = await api.get_latest_odometer(self._vehicle["id"])
+
         self._attr_native_value = latest
 
     @property
@@ -123,4 +122,6 @@ class LubeLoggerOdometerSensor(SensorEntity):
             "model": v.get("model"),
             "purchase_date": v.get("purchaseDate"),
             "sold_date": v.get("soldDate"),
+            "unit_system": self._unit,
+            "currency": self._entry.data.get("currency", "£"),
         }
