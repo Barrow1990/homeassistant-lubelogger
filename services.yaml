@@ -1,0 +1,74 @@
+add_odometer_entry:
+  name: Add Odometer Entry
+  description: Add a new odometer entry to a vehicle in LubeLogger.
+  fields:
+    entity_id:
+      name: Vehicle
+      description: Select the vehicle
+      required: true
+      selector:
+        entity:
+          integration: lubelogger
+          device_class: lubelogger_vehicle_info
+
+    value:
+      name: Odometer Value
+      required: true
+      selector:
+        number:
+          min: 0
+          step: 1
+          mode: box
+
+    date:
+      name: Date
+      required: true
+      selector:
+        date:
+
+add_service_record:
+  name: Add Service Record
+  description: Add a new service record to a vehicle in LubeLogger.
+  fields:
+    vehicle_id:
+      name: Vehicle ID
+      description: The numeric ID of the vehicle.
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+    data:
+      name: Service Data
+      description: A JSON object containing service details.
+      required: true
+      selector:
+        object:
+
+update_odometer_record:
+  name: Update Odometer Record
+  description: Add or update an odometer record for a vehicle in LubeLogger.
+  fields:
+    vehicle_id:
+      name: Vehicle ID
+      description: The numeric ID of the vehicle.
+      required: true
+      selector:
+        number:
+          min: 1
+          mode: box
+    value:
+      name: Odometer Value
+      description: The odometer reading to record.
+      required: true
+      selector:
+        number:
+          min: 0
+          step: 0.1
+          mode: box
+    date:
+      name: Date
+      description: The date of the odometer entry (YYYY-MM-DD).
+      required: true
+      selector:
+        text:

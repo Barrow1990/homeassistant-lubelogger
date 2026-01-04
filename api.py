@@ -31,6 +31,7 @@ class LubeLoggerApi:
             await self._session.close()
 
     async def _request(self, method: str, path: str, **kwargs) -> Any:
+        """Internal HTTP request helper."""
         url = f"{self._base_url}{path}"
 
         session = await self._get_session()
@@ -57,7 +58,6 @@ class LubeLoggerApi:
                     auth=auth,
                     **kwargs,
                 ) as resp:
-
                     if resp.status >= 400:
                         text = await resp.text()
                         raise RuntimeError(
@@ -74,9 +74,8 @@ class LubeLoggerApi:
         except aiohttp.ClientError as err:
             raise
 
-
     # -------------------------------------------------------------------------
-    # Public API methods
+    # Public GET API methods
     # -------------------------------------------------------------------------
 
     async def get_vehicles(self) -> list[dict[str, Any]]:
@@ -87,7 +86,7 @@ class LubeLoggerApi:
         """Return the latest odometer value for a vehicle."""
         value = await self._request(
             "GET",
-            f"/api/vehicle/odometerrecords/latest?vehicleId={vehicle_id}"
+            f"/api/vehicle/odometerrecords/latest?vehicleId={vehicle_id}",
         )
 
         # API guarantees this is an int, but we normalize to float
@@ -96,18 +95,15 @@ class LubeLoggerApi:
         except (TypeError, ValueError):
             return None
 
-
     async def get_odometer_records(self, vehicle_id: int) -> list[dict[str, Any]]:
         """Return all odometer records for a vehicle."""
         records = await self._request(
             "GET",
-            f"/api/vehicle/odometerrecords?vehicleId={vehicle_id}"
+            f"/api/vehicle/odometerrecords?vehicleId={vehicle_id}",
         )
 
         # Ensure it's always a list
         return records if isinstance(records, list) else []
-
-
 
     async def get_service_history(self, vehicle_id: int):
         """Return service history for a vehicle."""
@@ -117,19 +113,30 @@ class LubeLoggerApi:
         """Return fuel logs for a vehicle."""
         return await self._request("GET", f"/api/vehicles/{vehicle_id}/fuel")
 
+    # -------------------------------------------------------------------------
+    # Public ADD API methods
+    # -------------------------------------------------------------------------
+
     async def add_odometer_entry(self, vehicle_id: int, value: float, date: str):
         """Add a new odometer entry."""
-        payload = {"odometer": value, "date": date}
+        payload = {
+            "odometer": value,
+            "date": date,
+        }
+
         return await self._request(
             "POST",
-            f"/api/vehicles/{vehicle_id}/odometer",
-            json=payload
+            f"/api/vehicle/odometerrecords/add?vehicleId={vehicle_id}",
+            json=payload,
         )
 
     async def add_service_record(self, vehicle_id: int, data: dict[str, Any]):
         """Add a new service record."""
+        payload = data.copy()
+        payload["vehicleId"] = vehicle_id
+
         return await self._request(
             "POST",
-            f"/api/vehicles/{vehicle_id}/services",
-            json=data
+            "/api/vehicle/servicerecords",
+            json=payload,
         )

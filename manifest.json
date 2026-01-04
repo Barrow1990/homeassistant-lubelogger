@@ -6,5 +6,9 @@
   "requirements": [],
   "codeowners": ["@Barrow1990"],
   "iot_class": "cloud_polling",
-  "config_flow": true
+  "config_flow": true,
+  "blueprint_paths": [
+    "blueprints/automation/lubelogger"
+  ]
+
 }

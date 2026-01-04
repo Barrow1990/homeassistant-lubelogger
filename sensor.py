@@ -23,6 +23,7 @@ async def async_setup_entry(
     entities: list[SensorEntity] = []
 
     for vehicle in vehicles:
+        entities.append(LubeLoggerVehicleInfoSensor(entry, vehicle))
         entities.append(LubeLoggerVehicleStatusSensor(entry, vehicle))
         entities.append(LubeLoggerOdometerSensor(entry, vehicle))
 
@@ -45,6 +46,8 @@ class LubeLoggerVehicleStatusSensor(SensorEntity):
     """Main status sensor for a LubeLogger vehicle."""
 
     _attr_icon = "mdi:car-info"
+    _attr_primary = False
+    _attr_should_poll = False
 
     def __init__(self, entry: ConfigEntry, vehicle: dict[str, Any]):
         self._entry = entry
@@ -79,7 +82,8 @@ class LubeLoggerVehicleStatusSensor(SensorEntity):
 class LubeLoggerOdometerSensor(SensorEntity):
     """Odometer sensor for a LubeLogger vehicle."""
 
-    should_poll = True
+    _attr_primary = False
+    _attr_should_poll = True
 
     def __init__(self, entry: ConfigEntry, vehicle: dict[str, Any]):
         self._entry = entry
@@ -91,8 +95,8 @@ class LubeLoggerOdometerSensor(SensorEntity):
         self._attr_unique_id = f"{entry.entry_id}_vehicle_{vehicle_id}_odometer"
         self._attr_name = f"{name} Odometer"
 
-        # Unit is whatever LubeLogger uses (km or mi)
-        self._unit = entry.data.get("odometer_unit", "km")
+        # Unit from options, default mi
+        self._unit = entry.options.get("odometer_unit", "mi")
         self._attr_native_unit_of_measurement = self._unit
 
         self._attr_device_info = DeviceInfo(
@@ -105,23 +109,62 @@ class LubeLoggerOdometerSensor(SensorEntity):
         self._attr_native_value = None
 
     async def async_update(self):
-        """Fetch latest odometer value (raw km or miles from LubeLogger)."""
+        """Fetch latest odometer value."""
         api = self.hass.data[DOMAIN][self._entry.entry_id]
         latest = await api.get_latest_odometer(self._vehicle["id"])
-
         self._attr_native_value = latest
+
+    @property
+    def extra_state_attributes(self):
+        return {
+            "odometer_unit": self._unit,
+        }
+
+
+class LubeLoggerVehicleInfoSensor(SensorEntity):
+    """Metadata sensor for a LubeLogger vehicle."""
+
+    _attr_icon = "mdi:car"
+    _attr_has_entity_name = True
+    _attr_translation_key = "vehicle_info"
+    _attr_entity_category = None
+    _attr_should_poll = False
+    _attr_entity_registry_enabled_default = True
+    _attr_primary = True
+    _attr_device_class = "lubelogger_vehicle_info"
+
+    def __init__(self, entry: ConfigEntry, vehicle: dict[str, Any]):
+        self._entry = entry
+        self._vehicle = vehicle
+
+        vehicle_id = vehicle["id"]
+        name = build_vehicle_name(vehicle)
+
+        self._attr_unique_id = f"{entry.entry_id}_vehicle_{vehicle_id}_info"
+        self._attr_name = name
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, f"vehicle_{vehicle_id}")},
+            name=name,
+            manufacturer="LubeLogger",
+            model=vehicle.get("model", "Vehicle"),
+        )
+
+        # Info sensors have no meaningful primary value
+        self._attr_native_value = "info"
 
     @property
     def extra_state_attributes(self):
         v = self._vehicle
         return {
             "vehicle_id": v.get("id"),
-            "license_plate": v.get("licensePlate"),
             "year": v.get("year"),
             "make": v.get("make"),
             "model": v.get("model"),
+            "license_plate": v.get("licensePlate"),
             "purchase_date": v.get("purchaseDate"),
             "sold_date": v.get("soldDate"),
-            "unit_system": self._unit,
-            "currency": self._entry.data.get("currency", "£"),
+            "currency": self._entry.options.get("currency", "£"),
+            "odometer_multiplier": v.get("odometerMultiplier"),
+            "odometer_difference": v.get("odometerDifference"),
         }

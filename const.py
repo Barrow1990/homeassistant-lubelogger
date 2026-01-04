@@ -14,7 +14,7 @@ CONF_ODOMETER_UNIT = "odometer_unit"
 CONF_CURRENCY = "currency"
 
 # Default values
-DEFAULT_ODOMETER_UNIT = "km"
+DEFAULT_ODOMETER_UNIT = "mi"
 DEFAULT_CURRENCY = "£"
 
 # Supported units
